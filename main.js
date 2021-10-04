@@ -1,5 +1,4 @@
 const Discord = require('discord.js');
-const config = require('./config.json');
 
 const sendTime = '17:21';
 const notificationTime = '17:19';
@@ -26,7 +25,7 @@ const client = new Discord.Client({
 client.once('ready', async () => {
   console.log('Ready!');
   const channels = client.channels.cache;
-  const channel = channels.get(config.channel_id);
+  const channel = channels.get(process.env.CHANNEL_ID);
   do {
     await mainloop(channel);
   } while (1);
@@ -40,7 +39,7 @@ async function mainloop(channel) {
   currentTopicIndex = (currentTopicIndex + 1) % topics.length;
 }
 
-client.login(config.token);
+client.login(process.env.DISCORD_TOKEN_P1 + process.env.DISCORD_TOKEN_P2);
 
 async function notifyUsers(channel) {
   await timer(getMillisecondsTimeout(notificationTime));

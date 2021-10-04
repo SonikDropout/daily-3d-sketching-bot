@@ -4,12 +4,16 @@
   "description": "Simple discord bot to send reference image once a day",
   "main": "main.js",
   "scripts": {
-    "start": "node ."
+    "start": "node main.js",
+    "test": "node --require dotenv/config main.js"
   },
   "keywords": [],
   "author": "SonikDropout",
   "license": "ISC",
   "dependencies": {
     "discord.js": "^12.5.3"
+  },
+  "devDependencies": {
+    "dotenv": "^10.0.0"
   }
 }
