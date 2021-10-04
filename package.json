@@ -4,7 +4,7 @@
   "description": "Simple discord bot to send reference image once a day",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ."
   },
   "keywords": [],
   "author": "SonikDropout",
