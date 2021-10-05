@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const getImageURL = require('imageLookup.js');
 
 const sendTime = '17:21';
 const notificationTime = '17:19';
@@ -55,7 +56,7 @@ async function callUsers(channel) {
 
 async function sendImage(channel) {
   await timer(callBeforeStartTimeout * 60 * 1000);
-  channel.send(getImageMessage());
+  channel.send(await getImageMessage());
 }
 
 async function timeoutCall(channel) {
@@ -84,19 +85,13 @@ function getMillisecondsTimeout(desiredTime) {
   return desiredDate - currentDate;
 }
 
-function getImageMessage() {
-  const imageBoard = getImageBoard(topics[currentTopicIndex]);
-  const imageUrl = shiftImageFromBoard(imageBoard);
+async function getImageMessage() {
   return {
     content: '@everyone',
-    files: [new Discord.MessageAttachment(imageUrl)],
+    files: [
+      new Discord.MessageAttachment(
+        await getImageURL(topics[currentTopicIndex])
+      ),
+    ],
   };
-}
-
-function getImageBoard(topic) {
-  // TODO
-}
-
-function shiftImageFromBoard(board) {
-  // TODO
 }
