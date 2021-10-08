@@ -8,7 +8,7 @@ const CHANNEL_ID = '894523688106463235';
 
 const notificationMessage = `@everyone Сегодня в ${SEND_TIME} по GMT будет проходить ("НЕЗАЩИЩЕННЫЙ") СПИДМОДЕЛИНГ. Собираемся в дискорд канале Кайно.
 
-За ${MODELLING_TIMEOUT} минут вам нужно будет создать модель, по высланному рефу перед стартом.
+За ${MODELLING_TIMEOUT} минут вам нужно будет создать модель, по высланному перед стартом рефу.
 
 Учавствуйте сами или смотрите за процессом других учатников.`;
 
@@ -17,10 +17,13 @@ const callToActionMessage = `@everyone через ${CALL_TO_ACTION_TIMEOUT} ми
 const timeoutMessage = `@everyone время вышло, сдаем работы!`;
 
 const TOPICS = [
-  { name: 'hardsurf', boardID: '895532270595751966', weight: 0.5 },
-  { name: 'environment', boardID: '895532299192528907', weight: 0.25 },
-  { name: 'sculpt', boardID: '895532347456356402', weight: 0.25 },
+  { name: 'hardsurf', boardID: '895532270595751966' },
+  { name: 'environment', boardID: '895532299192528907' },
+  { name: 'hardsurf', boardID: '895532270595751966' },
+  { name: 'sculpt', boardID: '895532347456356402' },
 ];
+
+let currentTopicIndex = 0;
 
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES],
@@ -42,6 +45,7 @@ async function mainloop(channel) {
       await callUsers(channel);
       await sendImage(channel);
       await timeoutCall(channel);
+      currentTopicIndex = (currentTopicIndex + 1) % TOPICS.length;
     } catch (err) {
       console.error(err);
     }
@@ -94,26 +98,38 @@ function getMillisecondsTimeout(desiredTime) {
 }
 
 async function getImageMessage() {
-  const imageBoard = await client.channels.fetch(pickRandomTopic());
+  const imageBoard = await client.channels.fetch(
+    TOPICS[currentTopicIndex].boardID
+  );
   const messages = await imageBoard.messages.fetch();
-  const imageURL = messages.random().content;
-  console.log('Sending image', imageURL);
+  const message = messages.random();
+  console.log('Selected message content:', message.content);
+  console.log('Selected message has', message.attachments.size, 'attachments');
+  let attachment;
+  if (
+    /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(
+      message.content
+    )
+  ) {
+    attachment = new Discord.MessageAttachment(message.content, null, {
+      url: message.content,
+    });
+  } else if (message.attachments.size) {
+    attachment = message.attachments.first();
+  } else {
+    const backupImage = getBackupImage();
+    attachment = new Discord.MessageAttachment(backupImage, null, {
+      url: backupImage,
+    });
+  }
+  console.log('Sending image', attachment.url);
   return {
     content: '@everyone',
-    files: [new Discord.MessageAttachment(imageURL)],
+    files: [attachment],
   };
 }
 
-function pickRandomTopic() {
-  const random = Math.random();
-  let boardID;
-  let threshold = 0;
-  for (let topic of TOPICS) {
-    threshold += topic.weight;
-    boardID = topic.boardID;
-    if (threshold > random) {
-      break;
-    }
-  }
-  return boardID;
+function getBackupImage() {
+  const backupImages = require('./backup-images.json');
+  return backupImages[Math.floor(Math.random() * backupImages.length)];
 }
