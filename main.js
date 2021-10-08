@@ -1,22 +1,26 @@
 const Discord = require('discord.js');
 
-const sendTime = '17:21';
-const notificationTime = '17:19';
-const callBeforeStartTimeout = 1;
-const modellingTimeout = 1;
+const SEND_TIME = '10:31';
+const NOTIFICATION_TIME = '10:55';
+const CALL_TO_ACTION_TIMEOUT = .1;
+const MODELLING_TIMEOUT = 60;
+const CHANNEL_ID = '894523688106463235';
 
-const notificationMessage = `@everyone ХАЙ!) Сегодня в ${sendTime} по МСК будет проводить ("НЕЗАЩИЩЕННЫЙ") СПИДМОДЕЛИНГ. Собираемся в дискорд канале Кайно. Правила те же)
+const notificationMessage = `@everyone Сегодня в ${SEND_TIME} по GMT будет проходить ("НЕЗАЩИЩЕННЫЙ") СПИДМОДЕЛИНГ. Собираемся в дискорд канале Кайно.
 
-За один час вам нужно будет создать модель, по высланному рефу перед стартом.
+За ${MODELLING_TIMEOUT} минут вам нужно будет создать модель, по высланному рефу перед стартом.
 
-Вы можете так же и участвовать и смотреть за процессом участников)`;
+Учавствуйте сами или смотрите за процессом других учатников.`;
 
-const callToActionMessage = `@everyone через ${callBeforeStartTimeout} минут спидмоделинг)`;
+const callToActionMessage = `@everyone через ${CALL_TO_ACTION_TIMEOUT} минут спидмоделинг)`;
 
 const timeoutMessage = `@everyone время вышло, сдаем работы!`;
 
-const topics = ['environment', 'hardsurf', 'sculpt'];
-let currentTopicIndex = 0;
+const TOPICS = [
+  { name: 'hardsurf', boardID: '895532270595751966', weight: 0.5 },
+  { name: 'environment', boardID: '895532299192528907', weight: 0.25 },
+  { name: 'sculpt', boardID: '895532347456356402', weight: 0.25 },
+];
 
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES],
@@ -24,42 +28,47 @@ const client = new Discord.Client({
 
 client.once('ready', async () => {
   console.log('Ready!');
-  const channels = client.channels.cache;
-  const channel = channels.get(process.env.CHANNEL_ID);
-  do {
-    await mainloop(channel);
-  } while (1);
+  mainloop(await fetchMainChannel());
 });
 
-async function mainloop(channel) {
-  await notifyUsers(channel);
-  await callUsers(channel);
-  await sendImage(channel);
-  await timeoutCall(channel);
-  currentTopicIndex = (currentTopicIndex + 1) % topics.length;
+function fetchMainChannel() {
+  return client.channels.fetch(CHANNEL_ID);
 }
 
-client.login(process.env.DISCORD_TOKEN_P1 + process.env.DISCORD_TOKEN_P2);
+async function mainloop(channel) {
+  while (1) {
+    try {
+      await notifyUsers(channel);
+      await callUsers(channel);
+      await sendImage(channel);
+      await timeoutCall(channel);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+
+client.login(process.env.DISCORD_TOKEN);
 
 async function notifyUsers(channel) {
-  await timer(getMillisecondsTimeout(notificationTime));
+  await timer(getMillisecondsTimeout(NOTIFICATION_TIME));
   channel.send(notificationMessage);
 }
 
 async function callUsers(channel) {
   await timer(
-    getMillisecondsTimeout(sendTime) - callBeforeStartTimeout * 60 * 1000
+    getMillisecondsTimeout(SEND_TIME) - CALL_TO_ACTION_TIMEOUT * 60 * 1000
   );
   channel.send(callToActionMessage);
 }
 
 async function sendImage(channel) {
-  await timer(callBeforeStartTimeout * 60 * 1000);
-  channel.send(getImageMessage());
+  await timer(CALL_TO_ACTION_TIMEOUT * 60 * 1000);
+  channel.send(await getImageMessage());
 }
 
 async function timeoutCall(channel) {
-  await timer(modellingTimeout * 60 * 1000);
+  await timer(MODELLING_TIMEOUT * 60 * 1000);
   channel.send(timeoutMessage);
 }
 
@@ -72,31 +81,39 @@ function getMillisecondsTimeout(desiredTime) {
 
   desiredTime = desiredTime.split(':');
   const desiredDate = new Date();
-  desiredDate.setHours(desiredTime[0]);
-  desiredDate.setMinutes(desiredTime[1]);
+  desiredDate.setUTCHours(desiredTime[0]);
+  desiredDate.setUTCMinutes(desiredTime[1]);
   if (
-    desiredTime[0] < currentDate.getHours() ||
-    (desiredTime[0] == currentDate.getHours() &&
-      desiredTime[1] < currentDate.getMinutes())
+    desiredTime[0] < currentDate.getUTCHours() ||
+    (desiredTime[0] == currentDate.getUTCHours() &&
+      desiredTime[1] < currentDate.getUTCMinutes())
   )
-    desiredDate.setDate(desiredDate.getDate() + 1);
+    desiredDate.setUTCDate(desiredDate.getUTCDate() + 1);
 
   return desiredDate - currentDate;
 }
 
-function getImageMessage() {
-  const imageBoard = getImageBoard(topics[currentTopicIndex]);
-  const imageUrl = shiftImageFromBoard(imageBoard);
+async function getImageMessage() {
+  const imageBoard = await client.channels.fetch(pickRandomTopic());
+  const messages = await imageBoard.messages.fetch();
+  const imageURL = messages.random().content;
+  console.log('Sending image', imageURL);
   return {
     content: '@everyone',
-    files: [new Discord.MessageAttachment(imageUrl)],
+    files: [new Discord.MessageAttachment(imageURL)],
   };
 }
 
-function getImageBoard(topic) {
-  // TODO
-}
-
-function shiftImageFromBoard(board) {
-  // TODO
+function pickRandomTopic() {
+  const random = Math.random();
+  let boardID;
+  let threshold = 0;
+  for (let topic of TOPICS) {
+    threshold += topic.weight;
+    boardID = topic.boardID;
+    if (threshold > random) {
+      break;
+    }
+  }
+  return boardID;
 }
