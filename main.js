@@ -1,8 +1,8 @@
 const Discord = require('discord.js');
 
-const SEND_TIME = '10:31';
-const NOTIFICATION_TIME = '10:55';
-const CALL_TO_ACTION_TIMEOUT = .1;
+const SEND_TIME = '17:00';
+const NOTIFICATION_TIME = '9:00';
+const CALL_TO_ACTION_TIMEOUT = 10;
 const MODELLING_TIMEOUT = 60;
 const CHANNEL_ID = '894523688106463235';
 
