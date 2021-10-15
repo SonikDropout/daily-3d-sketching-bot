@@ -97,8 +97,10 @@ function getBackupImage() {
 
 function schedule(time, task, ...args) {
   let done;
+  time = time.split(':').map(Number);
   function executeInTime() {
-    if (getCurrentTime() == time) {
+    const currentTime = getCurrentTime();
+    if (currentTime[0] == time[0] && currentTime[1] == time[1]) {
       if (!done) {
         task(...args)
           .catch(console.error)
@@ -117,5 +119,5 @@ function getCurrentTime() {
   let currentTime = new Date();
   let currentHours = currentTime.getUTCHours() + UTC_OFFSET;
   let currentMinuts = currentTime.getUTCMinutes();
-  return `${currentHours}:${currentMinuts}`;
+  return [currentHours, currentMinuts];
 }
