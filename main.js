@@ -84,6 +84,7 @@ async function getImageMessage() {
     });
   }
   console.log('Sending image', attachment.url);
+  currentTopicIndex = (currentTopicIndex + 1) % TOPICS.length;
   return {
     content: '@everyone',
     files: [attachment],
