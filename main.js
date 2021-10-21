@@ -1,6 +1,12 @@
 const Discord = require('discord.js');
-const config = require('./config.json');
 const fs = require('fs');
+let config;
+try {
+  config = require('./config.json');
+} catch {
+  config = { topicIndex: 0 };
+  fs.promises.writeFile('./config.json', JSON.stringify(config));
+}
 
 const SEND_TIME = '20:00';
 const NOTIFICATION_TIME = '12:00';
