@@ -1,10 +1,12 @@
 const Discord = require('discord.js');
+const config = require('./config.json');
+const fs = require('fs');
 
 const SEND_TIME = '20:00';
 const NOTIFICATION_TIME = '12:00';
 const MODELLING_TIMEOUT = '21:00';
 const UTC_OFFSET = 3;
-const CHANNEL_ID = '894523688106463235';
+const CHANNEL_ID = process.env.CHANNEL_ID;
 
 const notificationMessage = `@everyone Сегодня в ${SEND_TIME} по MCK будет проходить СПИДмоделлинг. Собираемся в дискорд канале Кайно.
 
@@ -23,7 +25,7 @@ const TOPICS = [
   { name: 'sculpt', boardID: '895532347456356402' },
 ];
 
-let currentTopicIndex = 0;
+let currentTopicIndex = config.topicIndex;
 
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES],
@@ -64,7 +66,7 @@ async function getImageMessage() {
   );
   const messages = await imageBoard.messages.fetch();
   const message = messages.random();
-  console.log('Selected message content:', message.content);
+  console.log('Selected message content:', message.content || 'empty');
   console.log('Selected message has', message.attachments.size, 'attachments');
   let attachment;
   if (
@@ -84,11 +86,17 @@ async function getImageMessage() {
     });
   }
   console.log('Sending image', attachment.url);
-  currentTopicIndex = (currentTopicIndex + 1) % TOPICS.length;
+  updateTopicIndex();
   return {
     content: '@everyone',
     files: [attachment],
   };
+}
+
+function updateTopicIndex() {
+  currentTopicIndex = (currentTopicIndex + 1) % TOPICS.length;
+  config.topicIndex = currentTopicIndex;
+  fs.promises.writeFile('./config.json', JSON.stringify(config));
 }
 
 function getBackupImage() {
