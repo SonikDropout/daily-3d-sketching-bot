@@ -31,8 +31,6 @@ const TOPICS = [
   { name: 'sculpt', boardID: '895532347456356402' },
 ];
 
-let currentTopicIndex = config.topicIndex;
-
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES],
 });
@@ -67,8 +65,9 @@ async function timeoutCall(channel) {
 }
 
 async function getImageMessage() {
+  const topicIndex = new Date().getDate() % TOPICS.length;
   const imageBoard = await client.channels.fetch(
-    TOPICS[currentTopicIndex].boardID
+    TOPICS[topicIndex].boardID
   );
   const messages = await imageBoard.messages.fetch();
   const message = messages.random();
@@ -92,17 +91,10 @@ async function getImageMessage() {
     });
   }
   console.log('Sending image', attachment.url);
-  updateTopicIndex();
   return {
     content: '@everyone',
     files: [attachment],
   };
-}
-
-function updateTopicIndex() {
-  currentTopicIndex = (currentTopicIndex + 1) % TOPICS.length;
-  config.topicIndex = currentTopicIndex;
-  fs.promises.writeFile('./config.json', JSON.stringify(config));
 }
 
 function getBackupImage() {
